@@ -260,7 +260,82 @@ if (!/^[a-f0-9]{64}$/.test(expectedHash)) {
     }
 
 }
+if (!projectId) {
+    const fileInput = document.getElementById('verify_pdf');
+    const verifyButton = document.getElementById('verify_button');
+    const result = document.getElementById('verify_result');
+    const pdfLink = document.getElementById('pdf_link');
+    pdfLink.hidden = true;
 
+    function clearProject() {
+        for (const field of ['project_name', 'license_number', 'date_issued']) {
+            document.getElementById(field).textContent = '';
+        }
+        pdfLink.hidden = true;
+        pdfLink.removeAttribute('href');
+    }
+
+    fileInput.addEventListener('change', () => {
+        clearProject();
+        delete result.dataset.state;
+        result.textContent = '';
+        verifyButton.disabled = !fileInput.files.length;
+    });
+
+    verifyButton.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        clearProject();
+        fileInput.disabled = true;
+        verifyButton.disabled = true;
+        delete result.dataset.state;
+        result.textContent = 'Checking your PDF…';
+
+        try {
+            const digest = await crypto.subtle.digest(
+                'SHA-256',
+                await file.arrayBuffer()
+            );
+            const hash = Array.from(new Uint8Array(digest))
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+
+            const { data: project, error } = await supabase
+                .from('projects')
+                .select('project_name, license_number, date_issued, pdf_url')
+                .eq('hash', hash)
+                .limit(1)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (!project) {
+                result.dataset.state = 'mismatch';
+                result.textContent = '✕ Not verified. No saved PDF matches this file.';
+                return;
+            }
+
+            for (const field of ['project_name', 'license_number', 'date_issued']) {
+                document.getElementById(field).textContent = project[field] ?? '';
+            }
+
+            if (project.pdf_url) {
+                pdfLink.href = project.pdf_url;
+                pdfLink.hidden = false;
+            }
+
+            result.dataset.state = 'verified';
+            result.textContent = '✓ Verified. This PDF matches the file saved for this project.';
+        } catch (error) {
+            console.error(error);
+            result.textContent = 'The PDF could not be checked. Please try again.';
+        } finally {
+            fileInput.disabled = false;
+            verifyButton.disabled = !fileInput.files.length;
+        }
+    });
+}
 </script>
 
 </body>
