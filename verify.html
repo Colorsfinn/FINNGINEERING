@@ -1,38 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Project Verification</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Verification | Finngineering</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            color: #133247;
+            background: #edf6fa;
+            font: 16px/1.55 system-ui, sans-serif;
+        }
+
+        header {
+            padding: 22px 24px;
+            background: linear-gradient(115deg, #092f49, #116583);
+        }
+
+        .brand {
+            display: block;
+            max-width: 680px;
+            margin: auto;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 750;
+            text-decoration: none;
+        }
+
+        main {
+            width: min(680px, calc(100% - 32px));
+            margin: 32px auto;
+        }
+
+        h1 { margin: 0 0 20px; line-height: 1.15; }
+        h2 { margin: 0 0 12px; font-size: 1.25rem; }
+
+        .card {
+            margin-bottom: 16px;
+            padding: clamp(18px, 5vw, 28px);
+            border: 1px solid #c9dfe9;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        dl { margin: 0 0 20px; }
+        dt { margin-top: 12px; color: #375b6e; font-weight: 650; }
+        dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+
+        label { display: block; margin-bottom: 8px; }
+        input[type="file"] {
+            display: block;
+            max-width: 100%;
+            margin-bottom: 16px;
+            font: inherit;
+        }
+
+        .button, input::file-selector-button {
+            display: inline-block;
+            padding: 10px 16px;
+            border: 1px solid #0c5d7b;
+            border-radius: 9px;
+            background: #0c5d7b;
+            color: #fff;
+            font: inherit;
+            font-weight: 650;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .button.secondary, input::file-selector-button {
+            background: #e7f3f8;
+            color: #0c4c65;
+        }
+
+        input::file-selector-button { margin-right: 8px; }
+        .button:disabled { opacity: .55; cursor: default; }
+        :focus-visible { outline: 3px solid #0780a8; outline-offset: 3px; }
+
+        #verify_result:empty { display: none; }
+        #verify_result {
+            margin: 16px 0 0;
+            padding: 14px 16px;
+            border: 1px solid #c9dfe9;
+            border-radius: 10px;
+            background: #edf6fa;
+            font-weight: 650;
+        }
+
+        #verify_result[data-state="verified"] {
+            color: #14532d;
+            background: #e9f8ef;
+            border-color: #8fcea7;
+        }
+
+        #verify_result[data-state="mismatch"] {
+            color: #8b2028;
+            background: #fff0f0;
+            border-color: #e2a2a7;
+        }
+    </style>
 </head>
-
 <body>
+    <header>
+        <a class="brand" href="https://finngineering.com/">Finngineering</a>
+    </header>
 
-<h1>Project Verification</h1>
+    <main>
+        <h1>Project Verification</h1>
 
-<p><strong>Project Name:</strong></p>
-<div id="project_name"></div>
+        <section class="card" aria-labelledby="project-details">
+            <h2 id="project-details">Project details</h2>
+            <dl>
+                <dt>Project name</dt>
+                <dd id="project_name"></dd>
+                <dt>License number</dt>
+                <dd id="license_number"></dd>
+                <dt>Date issued</dt>
+                <dd id="date_issued"></dd>
+            </dl>
+            <a id="pdf_link" class="button secondary"
+               target="_blank" rel="noopener">View PDF</a>
+        </section>
 
-<br>
-
-<p><strong>License Number:</strong></p>
-<div id="license_number"></div>
-
-<br>
-
-<p><strong>Date Issued:</strong></p>
-<div id="date_issued"></div>
-
-<br>
-
-<a id="pdf_link" target="_blank">
-    View PDF
-</a>
-
-<h2>Verify a PDF</h2>
-<label for="verify_pdf">Choose the PDF you want to check</label>
-<input id="verify_pdf" type="file" accept=".pdf,application/pdf">
-<button id="verify_button" type="button" disabled>Verify PDF</button>
-<p id="verify_result" role="status"></p>
-
+        <section class="card" aria-labelledby="verify-heading">
+            <h2 id="verify-heading">Verify a PDF</h2>
+            <label for="verify_pdf">Choose the PDF you want to check.</label>
+            <input id="verify_pdf" type="file" accept=".pdf,application/pdf">
+            <button id="verify_button" class="button" type="button" disabled>
+                Verify PDF
+            </button>
+            <p id="verify_result" role="status" aria-atomic="true"></p>
+        </section>
+    </main>
 <script type="module">
 
 import { createClient }
