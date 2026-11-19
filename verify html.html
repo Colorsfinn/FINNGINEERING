@@ -27,6 +27,12 @@
     View PDF
 </a>
 
+<h2>Verify a PDF</h2>
+<label for="verify_pdf">Choose the PDF you want to check</label>
+<input id="verify_pdf" type="file" accept=".pdf,application/pdf">
+<button id="verify_button" type="button" disabled>Verify PDF</button>
+<p id="verify_result" role="status"></p>
+
 <script type="module">
 
 import { createClient }
@@ -48,7 +54,8 @@ if(projectId){
     const { data, error } =
       await supabase
         .from('projects')
-        .select('*')
+
+        .select('project_name, license_number, date_issued, pdf_url, hash')
         .eq('id', projectId)
         .single();
 
@@ -78,6 +85,49 @@ if(projectId){
           'pdf_link'
         ).href =
           data.pdf_url;
+
+const fileInput = document.getElementById('verify_pdf');
+const verifyButton = document.getElementById('verify_button');
+const result = document.getElementById('verify_result');
+const expectedHash = (data.hash ?? '').trim().toLowerCase();
+
+if (!/^[a-f0-9]{64}$/.test(expectedHash)) {
+    result.textContent = 'There is no valid SHA-256 fingerprint on file for this project.';
+} else {
+    fileInput.addEventListener('change', () => {
+        result.textContent = '';
+        verifyButton.disabled = !fileInput.files.length;
+    });
+
+    verifyButton.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        verifyButton.disabled = true;
+        fileInput.disabled = true;
+        result.textContent = 'Checking your PDF…';
+
+        try {
+            const digest = await window.crypto.subtle.digest(
+                'SHA-256',
+                await file.arrayBuffer()
+            );
+            const actualHash = Array.from(new Uint8Array(digest))
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+
+            result.textContent = actualHash === expectedHash
+                ? 'Verified. This PDF matches the file saved for this project.'
+                : 'The PDF does not match the file saved for this project.';
+        } catch (error) {
+            console.error(error);
+            result.textContent = 'The PDF could not be checked. Please try again.';
+        } finally {
+            fileInput.disabled = false;
+            verifyButton.disabled = false;
+        }
+    });
+}
 
     }
 
