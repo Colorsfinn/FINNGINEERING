@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <header style="padding: 12px 16px; background: linear-gradient(115deg, #092f49, #116583);">
-    <img src="https://colorsfinn.github.io/FINNGINEERING/Finngineering-logo.png"
-         alt="Finngineering"
-         style="display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto;">
-</header>
+    <title>FINNGINEERING PROJECT UPLOAD</title>
 
-<h1>Project Upload</h1>
+
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+</head>
 
 <body>
 
@@ -27,11 +30,56 @@
 
 <br><br>
 
-<button onclick="saveProject()">
-    Save Project
-</button>
+<button type="button" id="save-project-button">Save Project</button>
+
+<div id="qrcode"></div>
+
 
 <script type="module">
+
+
+
+async function stampPdfWithQr(pdfFile, verifyUrl) {
+
+    const pdfBytes = await pdfFile.arrayBuffer();
+
+    const pdfDoc =
+        await PDFLib.PDFDocument.load(pdfBytes);
+
+   const qrDataUrl = new window.QRious({
+    value: verifyUrl,
+    size: 300,
+    padding: 24
+}).toDataURL();
+
+    const qrBytes =
+        await fetch(qrDataUrl)
+            .then(r => r.arrayBuffer());
+
+    const qrImage =
+        await pdfDoc.embedPng(qrBytes);
+
+    const pages = pdfDoc.getPages();
+
+    const firstPage = pages[0];
+
+    const qrSize = 100;
+
+    firstPage.drawImage(qrImage, {
+        x: firstPage.getWidth() - 120,
+        y: 20,
+        width: qrSize,
+        height: qrSize
+    });
+
+    const modifiedPdf =
+        await pdfDoc.save();
+
+    return new Blob(
+        [modifiedPdf],
+        { type: 'application/pdf' }
+    );
+}
 
 import { createClient }
 from 'https://esm.sh/@supabase/supabase-js@2';
@@ -63,16 +111,6 @@ window.saveProject = async function() {
   const fileName =
     Date.now() + '-' + pdfFile.name;
 
-  const { error: uploadError } =
-    await supabase.storage
-      .from('project-pdfs')
-      .upload(fileName, pdfFile);
-
-  if (uploadError) {
-    alert('Upload Error: ' + uploadError.message);
-    return;
-  }
-
   const { data: publicData } =
     supabase.storage
       .from('project-pdfs')
@@ -94,23 +132,100 @@ window.saveProject = async function() {
       ])
       .select()
       .single();
-
-  if (error) {
+if (error) {
 
     alert('Database Error: ' + error.message);
 
-  } else {
+} else {
+
+    const projectId = data.id;
 
     let verifyUrl =
-      window.location.origin +
-      '/verify.html?id=' +
-      data.id;
+      'https://colorsfinn.github.io/FINNGINEERING/verify.html?id=' +
+      projectId;
+try {
+    const stampedPdf = await stampPdfWithQr(pdfFile, verifyUrl);
 
-    alert(
-      'Project Saved Successfully!\n\n' +
-      'Verification URL:\n' +
-      verifyUrl
-    );
+const hashBuffer = await window.crypto.subtle.digest(
+    'SHA-256',
+    await stampedPdf.arrayBuffer()
+);
+
+const pdfHash = Array.from(new Uint8Array(hashBuffer))
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+
+console.log('Stamped PDF SHA-256:', pdfHash);
+
+    const { error: uploadError } = await supabase.storage
+        .from('project-pdfs')
+        .upload(fileName, stampedPdf, { contentType: 'application/pdf' });
+
+    if (uploadError) {
+        throw uploadError;
+    }
+const { error: hashError } = await supabase
+    .from('projects')
+    .update({ hash: pdfHash })
+    .eq('id', projectId)
+    .select('id')
+    .single();
+
+if (hashError) {
+    alert('The PDF uploaded, but its hash could not be saved: ' + hashError.message);
+    return;
+}
+
+} catch (error) {
+    console.error(error);
+    alert('The project row was created, but the stamped PDF could not be saved. ' + error.message);
+    return;
+}
+  
+const qrResult = document.getElementById('qrcode');
+
+qrResult.innerHTML = `
+    <section aria-labelledby="qr-result-title" style="
+        box-sizing: border-box;
+        max-width: 420px;
+        margin: 24px 0;
+        padding: 24px;
+        border: 1px solid #b8d8c9;
+        border-radius: 14px;
+        background: #f1faf5;
+        color: #173a2b;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+    ">
+        <h2 id="qr-result-title" style="margin: 0 0 8px; font-size: 22px;">
+            Project saved
+        </h2>
+        <p style="margin: 0 0 16px; line-height: 1.5;">
+            The QR code is embedded in your PDF, and a SHA-256 fingerprint
+            has been generated.
+        </p>
+        <canvas role="img" aria-label="Project verification QR code" style="
+            display: block;
+            margin: 0 auto 12px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        "></canvas>
+        <a style="color: #175c42; font-weight: 600;">
+            Open verification page
+        </a>
+    </section>
+`;
+
+new window.QRious({
+    element: qrResult.querySelector('canvas'),
+    value: verifyUrl,
+    size: 180,
+    padding: 16
+});
+
+qrResult.querySelector('a').href = verifyUrl;
+
 
     console.log('Verify URL:', verifyUrl);
 
@@ -118,7 +233,24 @@ window.saveProject = async function() {
 
 };
 
+const saveButton = document.getElementById('save-project-button');
+
+saveButton.addEventListener('click', async () => {
+    if (saveButton.disabled) return;
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving…';
+
+    try {
+        await window.saveProject();
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Project';
+    }
+});
+
 </script>
 
 </body>
 </html>
+
