@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project Verification</title>
+</head>
+
+<body>
+
+<h1>Project Verification</h1>
+
+<p><strong>Project Name:</strong></p>
+<div id="project_name"></div>
+
+<br>
+
+<p><strong>License Number:</strong></p>
+<div id="license_number"></div>
+
+<br>
+
+<p><strong>Date Issued:</strong></p>
+<div id="date_issued"></div>
+
+<br>
+
+<a id="pdf_link" target="_blank">
+    View PDF
+</a>
+
+<script type="module">
+
+import { createClient }
+from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+'https://lyavctuwlyegrnfwqgez.supabase.co',
+'sb_publishable_-z5-3a45iAHLC6-cY2UR_w_nz-RB095'
+);
+
+const params =
+  new URLSearchParams(window.location.search);
+
+const projectId =
+  params.get('id');
+
+if(projectId){
+
+    const { data, error } =
+      await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+
+    if(error){
+
+        document.body.innerHTML =
+          '<h2>Project Not Found</h2>';
+
+    } else {
+
+        document.getElementById(
+          'project_name'
+        ).textContent =
+          data.project_name;
+
+        document.getElementById(
+          'license_number'
+        ).textContent =
+          data.license_number;
+
+        document.getElementById(
+          'date_issued'
+        ).textContent =
+          data.date_issued;
+
+        document.getElementById(
+          'pdf_link'
+        ).href =
+          data.pdf_url;
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>

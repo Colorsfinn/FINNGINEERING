@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FINNGINEERING PROJECT UPLOAD</title>
+</head>
+
+<body>
+
+<h1>FINNGINEERING PROJECT UPLOAD</h1>
+
+<p>Project Name</p>
+<input type="text" id="project_name">
+
+<p>License Number</p>
+<input type="text" id="license_number">
+
+<p>Date Issued</p>
+<input type="date" id="date_issued">
+
+<p>Select PDF</p>
+<input type="file" id="pdf_file" accept=".pdf">
+
+<br><br>
+
+<button onclick="saveProject()">
+    Save Project
+</button>
+
+<script type="module">
+
+import { createClient }
+from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+'https://lyavctuwlyegrnfwqgez.supabase.co',
+'sb_publishable_-z5-3a45iAHLC6-cY2UR_w_nz-RB095'
+);
+
+window.saveProject = async function() {
+
+  const project_name =
+    document.getElementById('project_name').value;
+
+  const license_number =
+    document.getElementById('license_number').value;
+
+  const date_issued =
+    document.getElementById('date_issued').value;
+
+  const pdfFile =
+    document.getElementById('pdf_file').files[0];
+
+  if (!pdfFile) {
+    alert('Please select a PDF');
+    return;
+  }
+
+  const fileName =
+    Date.now() + '-' + pdfFile.name;
+
+  const { error: uploadError } =
+    await supabase.storage
+      .from('project-pdfs')
+      .upload(fileName, pdfFile);
+
+  if (uploadError) {
+    alert('Upload Error: ' + uploadError.message);
+    return;
+  }
+
+  const { data: publicData } =
+    supabase.storage
+      .from('project-pdfs')
+      .getPublicUrl(fileName);
+
+  const pdf_url =
+    publicData.publicUrl;
+
+  const { data, error } =
+    await supabase
+      .from('projects')
+      .insert([
+        {
+          project_name,
+          license_number,
+          date_issued,
+          pdf_url
+        }
+      ])
+      .select()
+      .single();
+
+  if (error) {
+
+    alert('Database Error: ' + error.message);
+
+  } else {
+
+    let verifyUrl =
+      window.location.origin +
+      '/verify.html?id=' +
+      data.id;
+
+    alert(
+      'Project Saved Successfully!\n\n' +
+      'Verification URL:\n' +
+      verifyUrl
+    );
+
+    console.log('Verify URL:', verifyUrl);
+
+  }
+
+};
+
+</script>
+
+</body>
+</html>
