@@ -100,11 +100,30 @@
             background: #fff0f0;
             border-color: #e2a2a7;
         }
+   
+    header {
+    padding: 12px 16px;
+    isolation: isolate;
+}
+
+.brand-logo {
+    display: block;
+    width: min(100%, 540px);
+    height: auto;
+    margin: 0 auto;
+    filter: contrast(1.5);
+    mix-blend-mode: screen;
+}
     </style>
 </head>
 <body>
     <header>
-        <a class="brand" href="https://finngineering.com/">Finngineering</a>
+       <header>
+    <a class="brand" href="https://finngineering.com/">
+        <img class="brand-logo" src="./finngineering-logo.png"
+             alt="Finngineering">
+    </a>
+</header> 
     </header>
 
     <main>
