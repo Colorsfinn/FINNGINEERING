@@ -82,6 +82,7 @@
         }
 
         input::file-selector-button { margin-right: 8px; }
+        #pdf_link[hidden] { display: none; }
         .button:disabled { opacity: .55; cursor: default; }
         :focus-visible { outline: 3px solid #0780a8; outline-offset: 3px; }
 
@@ -137,6 +138,16 @@
     <main>
         <h1>Project Verification</h1>
 
+        <section class="card" aria-labelledby="verify-heading">
+            <h2 id="verify-heading">Verify a PDF</h2>
+            <label for="verify_pdf">Choose the PDF you want to check.</label>
+            <input id="verify_pdf" type="file" accept=".pdf,application/pdf">
+            <button id="verify_button" class="button" type="button" disabled>
+                Verify PDF
+            </button>
+            <p id="verify_result" role="status" aria-atomic="true"></p>
+        </section>
+
         <section class="card" aria-labelledby="project-details">
             <h2 id="project-details">Project details</h2>
             <dl>
@@ -148,17 +159,7 @@
                 <dd id="date_issued"></dd>
             </dl>
             <a id="pdf_link" class="button secondary"
-               target="_blank" rel="noopener">View PDF</a>
-        </section>
-
-        <section class="card" aria-labelledby="verify-heading">
-            <h2 id="verify-heading">Verify a PDF</h2>
-            <label for="verify_pdf">Choose the PDF you want to check.</label>
-            <input id="verify_pdf" type="file" accept=".pdf,application/pdf">
-            <button id="verify_button" class="button" type="button" disabled>
-                Verify PDF
-            </button>
-            <p id="verify_result" role="status" aria-atomic="true"></p>
+               target="_blank" rel="noopener" hidden>View PDF</a>
         </section>
     </main>
 <script type="module">
@@ -176,6 +177,19 @@ const params =
 
 const projectId =
   params.get('id');
+const pdfLink = document.getElementById('pdf_link');
+
+function hidePdfLink() {
+    pdfLink.hidden = true;
+    pdfLink.removeAttribute('href');
+}
+
+function showPdfLink(url) {
+    if (url) {
+        pdfLink.href = url;
+        pdfLink.hidden = false;
+    }
+}
 
 if(projectId){
 
@@ -209,11 +223,6 @@ if(projectId){
         ).textContent =
           data.date_issued;
 
-        document.getElementById(
-          'pdf_link'
-        ).href =
-          data.pdf_url;
-
 const fileInput = document.getElementById('verify_pdf');
 const verifyButton = document.getElementById('verify_button');
 const result = document.getElementById('verify_result');
@@ -223,6 +232,8 @@ if (!/^[a-f0-9]{64}$/.test(expectedHash)) {
     result.textContent = 'There is no valid SHA-256 fingerprint on file for this project.';
 } else {
     fileInput.addEventListener('change', () => {
+        hidePdfLink();
+        delete result.dataset.state;
         result.textContent = '';
         verifyButton.disabled = !fileInput.files.length;
     });
@@ -231,6 +242,8 @@ if (!/^[a-f0-9]{64}$/.test(expectedHash)) {
         const file = fileInput.files[0];
         if (!file) return;
 
+        hidePdfLink();
+        delete result.dataset.state;
         verifyButton.disabled = true;
         fileInput.disabled = true;
         result.textContent = 'Checking your PDF…';
@@ -244,7 +257,10 @@ if (!/^[a-f0-9]{64}$/.test(expectedHash)) {
                 .map(byte => byte.toString(16).padStart(2, '0'))
                 .join('');
 
-            result.textContent = actualHash === expectedHash
+            const matches = actualHash === expectedHash;
+            result.dataset.state = matches ? 'verified' : 'mismatch';
+            if (matches) showPdfLink(data.pdf_url);
+            result.textContent = matches
                 ? 'Verified. This PDF matches the file saved for this project.'
                 : 'The PDF does not match the file saved for this project.';
         } catch (error) {
@@ -264,15 +280,12 @@ if (!projectId) {
     const fileInput = document.getElementById('verify_pdf');
     const verifyButton = document.getElementById('verify_button');
     const result = document.getElementById('verify_result');
-    const pdfLink = document.getElementById('pdf_link');
-    pdfLink.hidden = true;
 
     function clearProject() {
         for (const field of ['project_name', 'license_number', 'date_issued']) {
             document.getElementById(field).textContent = '';
         }
-        pdfLink.hidden = true;
-        pdfLink.removeAttribute('href');
+        hidePdfLink();
     }
 
     fileInput.addEventListener('change', () => {
@@ -320,10 +333,7 @@ if (!projectId) {
                 document.getElementById(field).textContent = project[field] ?? '';
             }
 
-            if (project.pdf_url) {
-                pdfLink.href = project.pdf_url;
-                pdfLink.hidden = false;
-            }
+            showPdfLink(project.pdf_url);
 
             result.dataset.state = 'verified';
             result.textContent = '✓ Verified. This PDF matches the file saved for this project.';
