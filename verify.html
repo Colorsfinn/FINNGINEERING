@@ -121,6 +121,7 @@
     filter: contrast(1.5);
     mix-blend-mode: screen;
 }
+        [hidden] { display: none !important; }
     </style>
 </head>
 <body>
@@ -131,222 +132,63 @@
                  style="display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto;">
         </div>
     </header>
-        <div class="brand">FINNGINEERING</div>
-    </header>
-
 
     <main>
         <h1>Project Verification</h1>
-
-        <section class="card" aria-labelledby="verify-heading">
-            <h2 id="verify-heading">Verify a PDF</h2>
-            <label for="verify_pdf">Choose the PDF you want to check.</label>
-            <input id="verify_pdf" type="file" accept=".pdf,application/pdf">
-            <button id="verify_button" class="button" type="button" disabled>
-                Verify PDF
-            </button>
-            <p id="verify_result" role="status" aria-atomic="true"></p>
+        <p id="verify_result" role="status" aria-atomic="true"></p>
+        <section id="admin-login" class="card" hidden>
+            <form id="sign-in">
+                <label for="admin-email">Admin email</label>
+                <input id="admin-email" name="email" type="email" autocomplete="email" required>
+                <button type="submit">Email me a sign-in link</button>
+            </form>
+            <button id="sign-out" type="button" hidden>Sign out</button>
+            <p id="auth-status" role="status"></p>
         </section>
-
-        <section class="card" aria-labelledby="project-details">
-            <h2 id="project-details">Project details</h2>
-            <dl>
-                <dt>Project name</dt>
-                <dd id="project_name"></dd>
-                <dt>License number</dt>
-                <dd id="license_number"></dd>
-                <dt>Date issued</dt>
-                <dd id="date_issued"></dd>
-            </dl>
-            <a id="pdf_link" class="button secondary"
-               target="_blank" rel="noopener" hidden>View PDF</a>
+        <section id="admin-tools" hidden>
+            <section class="card">
+                <h2>Find a project</h2>
+                <form id="lookup">
+                    <label for="project-code">Project ID or verification link</label>
+                    <input id="project-code" name="projectCode" required>
+                    <button class="button" type="submit">Open project</button>
+                </form>
+                <form id="verify-file">
+                    <label for="verify_pdf">Find a project by stamped PDF</label>
+                    <input id="verify_pdf" name="pdf" type="file" accept=".pdf,application/pdf" required>
+                    <button class="button" type="submit">Check PDF</button>
+                </form>
+                <p id="lookup-status" role="status"></p>
+            </section>
+            <section id="details" class="card" hidden>
+                <h2>Project details</h2>
+                <dl>
+                    <dt>Project name</dt><dd id="project_name"></dd>
+                    <dt>License number</dt><dd id="license_number"></dd>
+                    <dt>Date issued</dt><dd id="date_issued"></dd>
+                </dl>
+                <button id="open-pdf" class="button" type="button">Get PDF link</button>
+                <a id="pdf-link" target="_blank" rel="noopener" hidden>Open PDF</a>
+                <button id="save-view" class="button" type="button">Save view</button>
+                <p id="detail-status" role="status"></p>
+            </section>
+            <section class="card">
+                <h2>Saved views</h2>
+                <ul id="saved-views"></ul>
+                <p id="saved-status" role="status"></p>
+            </section>
+            <section class="card">
+                <h2>Grant administrator access</h2>
+                <form id="grant-admin">
+                    <label for="new-admin-email">Email address</label>
+                    <input id="new-admin-email" name="email" type="email" required>
+                    <button class="button" type="submit">Grant access</button>
+                </form>
+                <p id="grant-status" role="status"></p>
+            </section>
+            <a href="./admin.html">Project Upload</a>
         </section>
     </main>
-<script type="module">
-
-import { createClient }
-from 'https://esm.sh/@supabase/supabase-js@2';
-
-const supabase = createClient(
-'https://lyavctuwlyegrnfwqgez.supabase.co',
-'sb_publishable_-z5-3a45iAHLC6-cY2UR_w_nz-RB095'
-);
-
-const params =
-  new URLSearchParams(window.location.search);
-
-const projectId =
-  params.get('id');
-const pdfLink = document.getElementById('pdf_link');
-
-function hidePdfLink() {
-    pdfLink.hidden = true;
-    pdfLink.removeAttribute('href');
-}
-
-function showPdfLink(url) {
-    if (url) {
-        pdfLink.href = url;
-        pdfLink.hidden = false;
-    }
-}
-
-if(projectId){
-
-    const { data, error } =
-      await supabase
-        .from('projects')
-
-        .select('project_name, license_number, date_issued, pdf_url, hash')
-        .eq('id', projectId)
-        .single();
-
-    if(error){
-
-        document.body.innerHTML =
-          '<h2>Project Not Found</h2>';
-
-    } else {
-
-        document.getElementById(
-          'project_name'
-        ).textContent =
-          data.project_name;
-
-        document.getElementById(
-          'license_number'
-        ).textContent =
-          data.license_number;
-
-        document.getElementById(
-          'date_issued'
-        ).textContent =
-          data.date_issued;
-
-const fileInput = document.getElementById('verify_pdf');
-const verifyButton = document.getElementById('verify_button');
-const result = document.getElementById('verify_result');
-const expectedHash = (data.hash ?? '').trim().toLowerCase();
-
-if (!/^[a-f0-9]{64}$/.test(expectedHash)) {
-    result.textContent = 'There is no valid SHA-256 fingerprint on file for this project.';
-} else {
-    fileInput.addEventListener('change', () => {
-        hidePdfLink();
-        delete result.dataset.state;
-        result.textContent = '';
-        verifyButton.disabled = !fileInput.files.length;
-    });
-
-    verifyButton.addEventListener('click', async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        hidePdfLink();
-        delete result.dataset.state;
-        verifyButton.disabled = true;
-        fileInput.disabled = true;
-        result.textContent = 'Checking your PDF…';
-
-        try {
-            const digest = await window.crypto.subtle.digest(
-                'SHA-256',
-                await file.arrayBuffer()
-            );
-            const actualHash = Array.from(new Uint8Array(digest))
-                .map(byte => byte.toString(16).padStart(2, '0'))
-                .join('');
-
-            const matches = actualHash === expectedHash;
-            result.dataset.state = matches ? 'verified' : 'mismatch';
-            if (matches) showPdfLink(data.pdf_url);
-            result.textContent = matches
-                ? 'Verified. This PDF matches the file saved for this project.'
-                : 'The PDF does not match the file saved for this project.';
-        } catch (error) {
-            console.error(error);
-            result.textContent = 'The PDF could not be checked. Please try again.';
-        } finally {
-            fileInput.disabled = false;
-            verifyButton.disabled = false;
-        }
-    });
-}
-
-    }
-
-}
-if (!projectId) {
-    const fileInput = document.getElementById('verify_pdf');
-    const verifyButton = document.getElementById('verify_button');
-    const result = document.getElementById('verify_result');
-
-    function clearProject() {
-        for (const field of ['project_name', 'license_number', 'date_issued']) {
-            document.getElementById(field).textContent = '';
-        }
-        hidePdfLink();
-    }
-
-    fileInput.addEventListener('change', () => {
-        clearProject();
-        delete result.dataset.state;
-        result.textContent = '';
-        verifyButton.disabled = !fileInput.files.length;
-    });
-
-    verifyButton.addEventListener('click', async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        clearProject();
-        fileInput.disabled = true;
-        verifyButton.disabled = true;
-        delete result.dataset.state;
-        result.textContent = 'Checking your PDF…';
-
-        try {
-            const digest = await crypto.subtle.digest(
-                'SHA-256',
-                await file.arrayBuffer()
-            );
-            const hash = Array.from(new Uint8Array(digest))
-                .map(byte => byte.toString(16).padStart(2, '0'))
-                .join('');
-
-            const { data: project, error } = await supabase
-                .from('projects')
-                .select('project_name, license_number, date_issued, pdf_url')
-                .eq('hash', hash)
-                .limit(1)
-                .maybeSingle();
-
-            if (error) throw error;
-
-            if (!project) {
-                result.dataset.state = 'mismatch';
-                result.textContent = '✕ Not verified. No saved PDF matches this file.';
-                return;
-            }
-
-            for (const field of ['project_name', 'license_number', 'date_issued']) {
-                document.getElementById(field).textContent = project[field] ?? '';
-            }
-
-            showPdfLink(project.pdf_url);
-
-            result.dataset.state = 'verified';
-            result.textContent = '✓ Verified. This PDF matches the file saved for this project.';
-        } catch (error) {
-            console.error(error);
-            result.textContent = 'The PDF could not be checked. Please try again.';
-        } finally {
-            fileInput.disabled = false;
-            verifyButton.disabled = !fileInput.files.length;
-        }
-    });
-}
-</script>
-
+    <script type="module" src="./verify.js"></script>
 </body>
 </html>

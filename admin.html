@@ -105,6 +105,15 @@
 <main>
     <h1>Project Upload</h1>
 
+    <form id="sign-in">
+        <label for="admin-email">Admin email</label>
+        <input id="admin-email" name="email" type="email" autocomplete="email" required>
+        <button type="submit">Email me a sign-in link</button>
+    </form>
+    <button id="sign-out" type="button" hidden>Sign out</button>
+    <p id="auth-status" role="status"></p>
+    <section id="admin-tools" hidden>
+    <p><a href="./verify.html?admin=1">Verification administration</a></p>
     <div class="upload-fields">
         <div>
             <label for="project_name">Project Name</label>
@@ -130,6 +139,7 @@
     </div>
 
     <div id="qrcode"></div>
+    </section>
 </main>
 
 <script type="module">
@@ -222,15 +232,20 @@ async function stampPdfWithQr(pdfFile, verifyUrl) {
     );
 }
 
-import { createClient }
-from 'https://esm.sh/@supabase/supabase-js@2';
+import { requireAdmin, supabase } from './auth.js';
 
-const supabase = createClient(
-'https://lyavctuwlyegrnfwqgez.supabase.co',
-'sb_publishable_-z5-3a45iAHLC6-cY2UR_w_nz-RB095'
-);
+let adminAllowed = false;
+requireAdmin((allowed) => {
+    adminAllowed = allowed;
+    document.querySelector('#admin-tools').hidden = !allowed;
+    if (!allowed) {
+        document.querySelector('#qrcode').replaceChildren();
+        if (savedPdfUrl) URL.revokeObjectURL(savedPdfUrl);
+    }
+});
 
 window.saveProject = async function() {
+  if (!adminAllowed) return;
 
   const project_name =
     document.getElementById('project_name').value;
@@ -282,8 +297,7 @@ if (error) {
     const projectId = data.id;
 
     let verifyUrl =
-      'https://colorsfinn.github.io/FINNGINEERING/verify.html?id=' +
-      projectId;
+      new URL('./verify.html?id=' + encodeURIComponent(projectId), location.href).href;
 let stampedPdf;
 try {
     stampedPdf = await stampPdfWithQr(pdfFile, verifyUrl);
