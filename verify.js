@@ -30,13 +30,18 @@ function setupPublicCheck() {
 
     input.addEventListener('change', () => {
         delete status.dataset.state;
-        status.textContent = '';
+        status.textContent = input.files[0] ? 'Selected: ' + input.files[0].name : '';
     });
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const file = input.files[0];
-        if (!file || button.disabled) return;
+        if (button.disabled) return;
+        if (!file) {
+            status.textContent = 'Choose the PDF from Files or Downloads first. If the file picker does not open, open this full QR link in Safari or Chrome.';
+            input.focus();
+            return;
+        }
 
         delete status.dataset.state;
         status.textContent = 'Checking PDF…';
@@ -47,7 +52,7 @@ function setupPublicCheck() {
             const { data, error } = await supabase.rpc('fin_verify_pdf', {
                 project_code: code,
                 pdf_hash: pdfHash
-            });
+            }).abortSignal(AbortSignal.timeout(15000));
             if (error || typeof data !== 'boolean') throw new Error('Verification failed');
             status.dataset.state = data ? 'verified' : 'mismatch';
             status.textContent = data ? '✓ Verified' : 'Not verified';
