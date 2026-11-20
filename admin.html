@@ -136,6 +136,50 @@
 
 
 
+let savedPdfUrl;
+
+function addPdfSaveActions(result, pdf) {
+    const downloadLink = result.querySelector('#download-stamped-pdf');
+    if (savedPdfUrl) URL.revokeObjectURL(savedPdfUrl);
+    savedPdfUrl = URL.createObjectURL(pdf);
+    downloadLink.href = savedPdfUrl;
+    downloadLink.download = pdf.name;
+
+    const shareButton = result.querySelector('#save-stamped-pdf');
+    const status = result.querySelector('#save-pdf-status');
+    const shareData = { files: [pdf] };
+    const canShare = typeof navigator.share === 'function' && navigator.canShare?.(shareData);
+    const canPick = typeof window.showSaveFilePicker === 'function';
+    if (!canShare && !canPick) return;
+
+    shareButton.hidden = false;
+    shareButton.addEventListener('click', async () => {
+        shareButton.disabled = true;
+        status.textContent = '';
+
+        try {
+            if (canShare) {
+                await navigator.share(shareData);
+            } else {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: pdf.name,
+                    types: [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(pdf);
+                await writable.close();
+                status.textContent = 'PDF saved.';
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                status.textContent = 'Could not save or share here. Use Download PDF to save a copy.';
+            }
+        } finally {
+            shareButton.disabled = false;
+        }
+    });
+}
+
 async function stampPdfWithQr(pdfFile, verifyUrl) {
 
     const pdfBytes = await pdfFile.arrayBuffer();
@@ -240,8 +284,9 @@ if (error) {
     let verifyUrl =
       'https://colorsfinn.github.io/FINNGINEERING/verify.html?id=' +
       projectId;
+let stampedPdf;
 try {
-    const stampedPdf = await stampPdfWithQr(pdfFile, verifyUrl);
+    stampedPdf = await stampPdfWithQr(pdfFile, verifyUrl);
 
 const hashBuffer = await window.crypto.subtle.digest(
     'SHA-256',
@@ -308,7 +353,14 @@ qrResult.innerHTML = `
             height: auto;
             border-radius: 8px;
         "></canvas>
-        <a style="color: #175c42; font-weight: 600;">
+        <div style="display: grid; gap: 8px; margin-bottom: 16px;">
+            <button id="save-stamped-pdf" type="button" hidden>Save or share PDF</button>
+            <a id="download-stamped-pdf" style="padding: 10px; color: #175c42; font-weight: 650;">
+                Download PDF
+            </a>
+            <div id="save-pdf-status" role="status"></div>
+        </div>
+        <a id="saved-verify-link" style="color: #175c42; font-weight: 600;">
             Open verification page
         </a>
     </section>
@@ -321,7 +373,14 @@ new window.QRious({
     padding: 16
 });
 
-qrResult.querySelector('a').href = verifyUrl;
+qrResult.querySelector('#saved-verify-link').href = verifyUrl;
+
+const stampedFile = new File(
+    [stampedPdf],
+    pdfFile.name.replace(/\.pdf$/i, '') + '-verified.pdf',
+    { type: 'application/pdf' }
+);
+addPdfSaveActions(qrResult, stampedFile);
 
 
     console.log('Verify URL:', verifyUrl);
