@@ -135,6 +135,14 @@
 
     <main>
         <h1>Project Verification</h1>
+        <section id="public-check" class="card" hidden>
+            <p>Choose the PDF you received to check whether it matches the original.</p>
+            <form id="check-public-pdf">
+                <label for="public-pdf">PDF file</label>
+                <input id="public-pdf" name="pdf" type="file" accept=".pdf,application/pdf" required>
+                <button class="button" type="submit">Check this PDF</button>
+            </form>
+        </section>
         <p id="verify_result" role="status" aria-atomic="true"></p>
         <section id="admin-login" class="card" hidden>
             <form id="sign-in">
@@ -189,6 +197,6 @@
             <a href="./admin.html">Project Upload</a>
         </section>
     </main>
-    <script type="module" src="./verify.js"></script>
+    <script type="module" src="./verify.js?v=pdf-check"></script>
 </body>
 </html>

@@ -8,19 +8,56 @@ if (params.get('admin') === '1') {
     element('admin-login').hidden = false;
     setupAdmin();
 } else {
+    setupPublicCheck();
+}
+
+async function sha256(file) {
+    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function setupPublicCheck() {
     const status = element('verify_result');
     if (!code) {
-        status.textContent = 'Not verified';
-    } else {
-        status.textContent = 'Checking…';
-        const { data, error } = await supabase.rpc('fin_verify_qr', { project_code: code });
-        if (error) {
-            status.textContent = 'Verification unavailable. Try again.';
-        } else {
-            status.dataset.state = data ? 'verified' : 'mismatch';
-            status.textContent = data ? 'Verified' : 'Not verified';
-        }
+        status.textContent = 'Open the verification link from the PDF’s QR code.';
+        return;
     }
+
+    const form = element('check-public-pdf');
+    const input = element('public-pdf');
+    const button = form.querySelector('button');
+    element('public-check').hidden = false;
+
+    input.addEventListener('change', () => {
+        delete status.dataset.state;
+        status.textContent = '';
+    });
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const file = input.files[0];
+        if (!file || button.disabled) return;
+
+        delete status.dataset.state;
+        status.textContent = 'Checking PDF…';
+        input.disabled = true;
+        button.disabled = true;
+        try {
+            const pdfHash = await sha256(file);
+            const { data, error } = await supabase.rpc('fin_verify_pdf', {
+                project_code: code,
+                pdf_hash: pdfHash
+            });
+            if (error || typeof data !== 'boolean') throw new Error('Verification failed');
+            status.dataset.state = data ? 'verified' : 'mismatch';
+            status.textContent = data ? '✓ Verified' : 'Not verified';
+        } catch {
+            status.textContent = 'Could not check the PDF. Try again.';
+        } finally {
+            input.disabled = false;
+            button.disabled = false;
+        }
+    });
 }
 
 function setupAdmin() {
@@ -104,8 +141,7 @@ function setupAdmin() {
         clearProject();
         lookupStatus.textContent = 'Checking…';
         try {
-            const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
-            const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+            const hash = await sha256(file);
             if (revision === lookupRevision) await openProject('hash', hash);
         } catch {
             if (revision === lookupRevision) lookupStatus.textContent = 'The PDF could not be checked.';
