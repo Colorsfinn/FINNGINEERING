@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FINNGINEERING PROJECT UPLOAD</title>
 
 
@@ -10,6 +12,86 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #edf6fa;
+            color: #133247;
+            font: 16px/1.55 system-ui, sans-serif;
+        }
+
+        main {
+            width: min(100% - 32px, 600px);
+            margin: clamp(16px, 5vw, 32px) auto;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            line-height: 1.2;
+        }
+
+        .upload-fields {
+            display: grid;
+            gap: 16px;
+            padding: clamp(16px, 4vw, 24px);
+            border: 1px solid #c9dfe9;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 650;
+        }
+
+        input, button {
+            min-height: 44px;
+            font: inherit;
+        }
+
+        input {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid #658494;
+            border-radius: 8px;
+            background: #fff;
+            color: inherit;
+        }
+
+        input[type="file"] {
+            padding: 6px;
+            text-overflow: ellipsis;
+        }
+
+        input::file-selector-button, button {
+            padding: 8px 12px;
+            border: 1px solid #0c5d7b;
+            border-radius: 8px;
+            font: inherit;
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        input::file-selector-button {
+            min-height: 44px;
+            background: #e7f3f8;
+            color: #0c4c65;
+        }
+
+        button {
+            background: #0c5d7b;
+            color: #fff;
+        }
+
+        button:disabled { opacity: .55; cursor: default; }
+        :focus-visible { outline: 3px solid #0780a8; outline-offset: 2px; }
+    </style>
 </head>
 
 <body>
@@ -20,26 +102,35 @@
          style="display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto;">
 </header>
 
-<h1>Project Upload</h1>
+<main>
+    <h1>Project Upload</h1>
 
-<p>Project Name</p>
-<input type="text" id="project_name">
+    <div class="upload-fields">
+        <div>
+            <label for="project_name">Project Name</label>
+            <input type="text" id="project_name">
+        </div>
 
-<p>License Number</p>
-<input type="text" id="license_number">
+        <div>
+            <label for="license_number">License Number</label>
+            <input type="text" id="license_number">
+        </div>
 
-<p>Date Issued</p>
-<input type="date" id="date_issued">
+        <div>
+            <label for="date_issued">Date Issued</label>
+            <input type="date" id="date_issued">
+        </div>
 
-<p>Select PDF</p>
-<input type="file" id="pdf_file" accept=".pdf">
+        <div>
+            <label for="pdf_file">Select PDF</label>
+            <input type="file" id="pdf_file" accept=".pdf">
+        </div>
 
-<br><br>
+        <button type="button" id="save-project-button">Save Project</button>
+    </div>
 
-<button type="button" id="save-project-button">Save Project</button>
-
-<div id="qrcode"></div>
-
+    <div id="qrcode"></div>
+</main>
 
 <script type="module">
 
