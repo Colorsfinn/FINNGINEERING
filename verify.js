@@ -67,6 +67,7 @@ function setupPublicCheck() {
 
 function setupAdmin() {
     const details = element('details');
+    const pdfInput = element('verify_pdf');
     const pdfLink = element('pdf-link');
     const lookupStatus = element('lookup-status');
     const projectResults = element('project-results');
@@ -91,6 +92,7 @@ function setupAdmin() {
 
     async function openProject(column, value) {
         if (!allowed) return;
+        if (column === 'id') pdfInput.value = '';
         const revision = ++lookupRevision;
         clearProject();
         delete lookupStatus.dataset.state;
@@ -144,6 +146,7 @@ function setupAdmin() {
 
         const { field, query } = event.currentTarget.elements;
         const term = query.value.trim();
+        pdfInput.value = '';
         const revision = ++lookupRevision;
         clearProject();
         delete lookupStatus.dataset.state;
@@ -182,7 +185,7 @@ function setupAdmin() {
         }
     });
 
-    element('verify_pdf').addEventListener('change', () => {
+    pdfInput.addEventListener('change', () => {
         lookupRevision++;
         clearProject();
         delete lookupStatus.dataset.state;
@@ -255,6 +258,7 @@ function setupAdmin() {
             savedRevision++;
             clearProject();
             savedList.replaceChildren();
+            pdfInput.value = '';
             delete lookupStatus.dataset.state;
             lookupStatus.textContent = '';
             savedStatus.textContent = '';
