@@ -14,6 +14,18 @@ export async function requireAdmin(onChange) {
     const passwordSettings = document.querySelector('#password-settings');
     const passwordForm = document.querySelector('#set-password');
     const passwordStatus = document.querySelector('#password-status');
+    const newPassword = passwordForm.elements.newPassword;
+    const togglePassword = document.querySelector('#toggle-password');
+
+    function setPasswordVisibility(visible) {
+        newPassword.type = visible ? 'text' : 'password';
+        togglePassword.setAttribute('aria-pressed', String(visible));
+        togglePassword.title = visible ? 'Hide password' : 'Show password';
+    }
+
+    togglePassword.addEventListener('click', () => {
+        setPasswordVisibility(newPassword.type === 'password');
+    });
 
     async function signIn(event, withPassword) {
         event.preventDefault();
@@ -59,7 +71,10 @@ export async function requireAdmin(onChange) {
                 password: passwordForm.elements.newPassword.value
             });
             passwordStatus.textContent = error?.message ?? 'Password saved. You can now sign in with email and password.';
-            if (!error) passwordForm.reset();
+            if (!error) {
+                passwordForm.reset();
+                setPasswordVisibility(false);
+            }
         } catch {
             passwordStatus.textContent = 'Password could not be saved. Try again.';
         } finally {
@@ -84,6 +99,7 @@ export async function requireAdmin(onChange) {
             passwordSettings.hidden = !allowed;
             if (!allowed) {
                 passwordSettings.open = false;
+                setPasswordVisibility(false);
                 passwordForm.reset();
                 passwordStatus.textContent = '';
             }
