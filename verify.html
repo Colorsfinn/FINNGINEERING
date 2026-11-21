@@ -79,8 +79,8 @@
         .button:disabled { opacity: .55; cursor: default; }
         :focus-visible { outline: 3px solid #0780a8; outline-offset: 3px; }
 
-        #verify_result:empty { display: none; }
-        #verify_result {
+        .verification-result:empty { display: none; }
+        .verification-result {
             margin: 16px 0 0;
             padding: 14px 16px;
             border: 1px solid #c9dfe9;
@@ -89,13 +89,13 @@
             font-weight: 650;
         }
 
-        #verify_result[data-state="verified"] {
+        .verification-result[data-state="verified"] {
             color: #14532d;
             background: #e9f8ef;
             border-color: #8fcea7;
         }
 
-        #verify_result[data-state="mismatch"] {
+        .verification-result[data-state="mismatch"] {
             color: #8b2028;
             background: #fff0f0;
             border-color: #e2a2a7;
@@ -136,7 +136,7 @@
                 <button class="button" type="submit">Check this PDF</button>
             </form>
         </section>
-        <p id="verify_result" role="status" aria-atomic="true"></p>
+        <p id="verify_result" class="verification-result" role="status" aria-atomic="true"></p>
         <section id="admin-login" class="card" hidden>
             <form id="sign-in">
                 <label for="admin-email">Admin email</label>
@@ -159,7 +159,7 @@
                     <input id="verify_pdf" name="pdf" type="file" accept=".pdf,application/pdf" required>
                     <button class="button" type="submit">Check PDF</button>
                 </form>
-                <p id="lookup-status" role="status"></p>
+                <p id="lookup-status" class="verification-result" role="status" aria-atomic="true"></p>
             </section>
             <section id="details" class="card" hidden>
                 <h2>Project details</h2>
@@ -190,6 +190,6 @@
             <a href="./admin.html">Project Upload</a>
         </section>
     </main>
-    <script type="module" src="./verify.js?v=pdf-picker-feedback"></script>
+    <script type="module" src="./verify.js?v=admin-pdf-result"></script>
 </body>
 </html>
