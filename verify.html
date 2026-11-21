@@ -141,10 +141,22 @@
             <form id="sign-in">
                 <label for="admin-email">Admin email</label>
                 <input id="admin-email" name="email" type="email" autocomplete="email" required>
-                <button type="submit">Email me a sign-in link</button>
+                <label for="admin-password">Password</label>
+                <input id="admin-password" name="password" type="password" autocomplete="current-password">
+                <button type="submit">Sign in</button>
+                <button id="email-sign-in" type="button">Email me a sign-in link</button>
             </form>
             <button id="sign-out" type="button" hidden>Sign out</button>
             <p id="auth-status" role="status"></p>
+            <details id="password-settings" hidden>
+                <summary>Set or change password</summary>
+                <form id="set-password">
+                    <label for="new-admin-password">New password (at least 8 characters)</label>
+                    <input id="new-admin-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+                    <button type="submit">Save password</button>
+                </form>
+                <p id="password-status" role="status"></p>
+            </details>
         </section>
         <section id="admin-tools" hidden>
             <section class="card">
@@ -196,6 +208,6 @@
             <a href="./admin.html">Project Upload</a>
         </section>
     </main>
-    <script type="module" src="./verify.js?v=admin-project-search"></script>
+    <script type="module" src="./verify.js?v=admin-password"></script>
 </body>
 </html>
