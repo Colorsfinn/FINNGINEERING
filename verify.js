@@ -69,6 +69,7 @@ function setupAdmin() {
     const details = element('details');
     const pdfLink = element('pdf-link');
     const lookupStatus = element('lookup-status');
+    const projectResults = element('project-results');
     const savedList = element('saved-views');
     const savedStatus = element('saved-status');
     const detailStatus = element('detail-status');
@@ -79,6 +80,7 @@ function setupAdmin() {
     let savedRevision = 0;
 
     function clearProject() {
+        projectResults.replaceChildren();
         activeProject = undefined;
         details.hidden = true;
         pdfLink.hidden = true;
@@ -136,16 +138,47 @@ function setupAdmin() {
         }
     }
 
-    element('lookup').addEventListener('submit', (event) => {
+    element('lookup').addEventListener('submit', async (event) => {
         event.preventDefault();
-        const value = event.currentTarget.elements.projectCode.value.trim();
-        const projectCode = URL.canParse(value) ? new URL(value).searchParams.get('id') : value;
-        if (projectCode) openProject('id', projectCode);
-        else {
-            lookupRevision++;
-            clearProject();
-            delete lookupStatus.dataset.state;
-            lookupStatus.textContent = 'Enter a project ID or a verification link with an ID.';
+        if (!allowed) return;
+
+        const { field, query } = event.currentTarget.elements;
+        const term = query.value.trim();
+        const revision = ++lookupRevision;
+        clearProject();
+        delete lookupStatus.dataset.state;
+        if (!term) {
+            lookupStatus.textContent = 'Enter a license number or project name.';
+            return;
+        }
+
+        lookupStatus.textContent = 'Searching…';
+        const projects = supabase.from('projects').select('id, project_name, license_number, date_issued');
+        const pattern = term.replace(/[\\%_]/g, '\\$&');
+        const matches = field.value === 'project_name'
+            ? projects.ilike('project_name', '%' + pattern + '%')
+            : projects.eq('license_number', term);
+        const { data, error } = await matches.order('date_issued', { ascending: false })
+            .order('id', { ascending: false }).limit(26);
+        if (revision !== lookupRevision) return;
+
+        if (error || !data?.length) {
+            lookupStatus.textContent = error ? 'Project search failed. Try again.' : 'No matching projects.';
+            return;
+        }
+
+        lookupStatus.textContent = data.length > 25
+            ? 'Showing the first 25 matches. Refine your search if needed.'
+            : data.length + (data.length === 1 ? ' matching project' : ' matching projects');
+        for (const project of data.slice(0, 25)) {
+            const item = document.createElement('li');
+            const open = document.createElement('button');
+            open.type = 'button';
+            open.textContent = [project.project_name, project.license_number, project.date_issued]
+                .filter(Boolean).join(' · ') || 'Open project';
+            open.addEventListener('click', () => openProject('id', project.id));
+            item.append(open);
+            projectResults.append(item);
         }
     });
 

@@ -150,10 +150,16 @@
             <section class="card">
                 <h2>Find a project</h2>
                 <form id="lookup">
-                    <label for="project-code">Project ID or verification link</label>
-                    <input id="project-code" name="projectCode" required>
-                    <button class="button" type="submit">Open project</button>
+                    <label for="project-search-field">Search by</label>
+                    <select id="project-search-field" name="field">
+                        <option value="license_number">License number</option>
+                        <option value="project_name">Project name</option>
+                    </select>
+                    <label for="project-search">License number or project name</label>
+                    <input id="project-search" name="query" required>
+                    <button class="button" type="submit">Search</button>
                 </form>
+                <ul id="project-results" aria-label="Matching projects"></ul>
                 <form id="verify-file">
                     <label for="verify_pdf">Find a project by stamped PDF</label>
                     <input id="verify_pdf" name="pdf" type="file" accept=".pdf,application/pdf" required>
@@ -190,6 +196,6 @@
             <a href="./admin.html">Project Upload</a>
         </section>
     </main>
-    <script type="module" src="./verify.js?v=admin-pdf-result"></script>
+    <script type="module" src="./verify.js?v=admin-project-search"></script>
 </body>
 </html>
