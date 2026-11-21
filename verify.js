@@ -1,4 +1,4 @@
-import { requireAdmin, supabase } from './auth.js';
+import { requireAdmin, supabase } from './auth.js?v=admin-password';
 
 const element = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
