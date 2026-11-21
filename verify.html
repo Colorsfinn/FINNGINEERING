@@ -152,7 +152,12 @@
                 <summary>Set or change password</summary>
                 <form id="set-password">
                     <label for="new-admin-password">New password (at least 8 characters)</label>
-                    <input id="new-admin-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input id="new-admin-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+                        <button id="toggle-password" type="button" aria-label="Show password" aria-controls="new-admin-password" aria-pressed="false" style="min-width: 44px; min-height: 44px;">
+                            <span aria-hidden="true">👁</span>
+                        </button>
+                    </div>
                     <button type="submit">Save password</button>
                 </form>
                 <p id="password-status" role="status"></p>
@@ -208,6 +213,6 @@
             <a href="./admin.html">Project Upload</a>
         </section>
     </main>
-    <script type="module" src="./verify.js?v=admin-password"></script>
+    <script type="module" src="./verify.js?v=password-visibility"></script>
 </body>
 </html>
