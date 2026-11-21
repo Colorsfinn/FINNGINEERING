@@ -91,12 +91,18 @@ function setupAdmin() {
         if (!allowed) return;
         const revision = ++lookupRevision;
         clearProject();
+        delete lookupStatus.dataset.state;
         lookupStatus.textContent = 'Checking…';
         const { data, error } = await supabase.from('projects')
             .select('id, project_name, license_number, date_issued, pdf_url')
             .eq(column, value).limit(1).maybeSingle();
         if (revision !== lookupRevision) return;
-        lookupStatus.textContent = error ? 'Project lookup failed.' : data ? '' : 'Project not found.';
+        if (column === 'hash' && !error) {
+            lookupStatus.dataset.state = data ? 'verified' : 'mismatch';
+            lookupStatus.textContent = data ? '✓ Verified' : '✗ Not verified';
+        } else {
+            lookupStatus.textContent = error ? 'Project lookup failed.' : data ? '' : 'Project not found.';
+        }
         if (!data) return;
         activeProject = data;
         fields.forEach((field) => { element(field).textContent = data[field] ?? ''; });
@@ -135,7 +141,19 @@ function setupAdmin() {
         const value = event.currentTarget.elements.projectCode.value.trim();
         const projectCode = URL.canParse(value) ? new URL(value).searchParams.get('id') : value;
         if (projectCode) openProject('id', projectCode);
-        else lookupStatus.textContent = 'Enter a project ID or a verification link with an ID.';
+        else {
+            lookupRevision++;
+            clearProject();
+            delete lookupStatus.dataset.state;
+            lookupStatus.textContent = 'Enter a project ID or a verification link with an ID.';
+        }
+    });
+
+    element('verify_pdf').addEventListener('change', () => {
+        lookupRevision++;
+        clearProject();
+        delete lookupStatus.dataset.state;
+        lookupStatus.textContent = '';
     });
 
     element('verify-file').addEventListener('submit', async (event) => {
@@ -144,6 +162,7 @@ function setupAdmin() {
         if (!file || !allowed) return;
         const revision = ++lookupRevision;
         clearProject();
+        delete lookupStatus.dataset.state;
         lookupStatus.textContent = 'Checking…';
         try {
             const hash = await sha256(file);
@@ -203,6 +222,7 @@ function setupAdmin() {
             savedRevision++;
             clearProject();
             savedList.replaceChildren();
+            delete lookupStatus.dataset.state;
             lookupStatus.textContent = '';
             savedStatus.textContent = '';
             element('grant-status').textContent = '';
